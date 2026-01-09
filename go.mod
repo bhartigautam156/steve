@@ -5,6 +5,14 @@ go 1.25.0
 toolchain go1.25.4
 
 replace (
+	github.com/rancher/dynamiclistener => github.com/bhartigautam156/dynamiclistener v0.0.0-20251230121719-181be4aee6f5
+	github.com/rancher/lasso => github.com/bhartigautam156/lasso v0.0.0-20251229100131-0f72619beec0
+	github.com/rancher/norman => github.com/bhartigautam156/norman v0.0.0-20251230120334-71f332fee56c
+	github.com/rancher/rancher/apiserver => github.com/bhartigautam156/apiserver v0.0.0-20251230120015-447e11029750
+	github.com/rancher/wrangler/v3 => github.com/bhartigautam156/wrangler/v3 v3.3.1-0.20251229122518-17d8c43b27b8
+)
+
+replace (
 	github.com/crewjam/saml => github.com/rancher/saml v0.4.14
 	github.com/knative/pkg => github.com/rancher/pkg v0.0.0-20181214184433-b04c0947ad2f
 	github.com/matryer/moq => github.com/rancher/moq v0.0.0-20190404221404-ee5226d43009
@@ -32,10 +40,10 @@ require (
 	github.com/rancher/apiserver v0.8.1
 	github.com/rancher/dynamiclistener v0.7.2-rc.3
 	github.com/rancher/kubernetes-provider-detector v0.1.6-0.20240606163014-fcae75779379
-	github.com/rancher/lasso v0.2.6
+	github.com/rancher/lasso v0.2.5
 	github.com/rancher/norman v0.8.0
 	github.com/rancher/remotedialer v0.6.0-rc.1
-	github.com/rancher/wrangler/v3 v3.3.2-rc.1
+	github.com/rancher/wrangler/v3 v3.3.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.11.1
 	github.com/tinylib/msgp v1.6.3
@@ -57,7 +65,7 @@ require (
 	k8s.io/kubernetes v1.35.0
 	k8s.io/utils v0.0.0-20251002143259-bc988d571ff4
 	modernc.org/sqlite v1.40.1
-	sigs.k8s.io/controller-runtime v0.23.0
+	sigs.k8s.io/controller-runtime v0.22.4
 	sigs.k8s.io/yaml v1.6.0
 )
 
@@ -131,14 +139,12 @@ require (
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b // indirect
-	golang.org/x/mod v0.30.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
 	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/term v0.37.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	golang.org/x/time v0.9.0 // indirect
-	golang.org/x/tools v0.39.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.4.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250528174236-200df99c418a // indirect
@@ -147,9 +153,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	k8s.io/code-generator v0.35.0 // indirect
-	k8s.io/gengo v0.0.0-20250130153323-76c5745d3511 // indirect
-	k8s.io/gengo/v2 v2.0.0-20250922181213-ec3ebc5fd46b // indirect
 	k8s.io/kms v0.35.0 // indirect
 	modernc.org/libc v1.66.10 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
