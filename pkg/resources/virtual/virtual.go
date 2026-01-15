@@ -4,7 +4,9 @@ package virtual
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
+	"strconv"
 	"time"
 
 	rescommon "github.com/rancher/steve/pkg/resources/common"
@@ -43,11 +45,6 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 		converters = append(converters, clusters.TransformManagedCluster)
 	}
 
-	//aded for debugging purposes
-	for idx, col := range columns {
-		logrus.Infof("Column %d: Name=%s, Field=%s, Type=%s", idx, col.Name, col.Field, col.Type)
-	}
-
 	// Detecting if we need to convert date fields
 	for _, col := range columns {
 		gvkDateFields, gvkFound := rescommon.DateFieldsByGVK[gvk]
@@ -55,61 +52,49 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 		hasBuiltInDate := gvkFound && slices.Contains(gvkDateFields, col.Name)
 
 		if hasCRDDate || hasBuiltInDate {
-			converters = append(converters, func(obj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-				logrus.Infof("Processing object: %+v", obj.Object)
-				// FIX: Removed dependency on static 'index' from col.Field
-				// because K8s 1.35+ may shift columns, making the schema index invalid.
+			// Extract the index from col.Field (e.g., "$.metadata.fields[2]" -> 2)
+			fieldIndex := extractFieldIndex(col.Field)
 
+			// Capture fieldIndex in closure
+			idx := fieldIndex
+
+			converters = append(converters, func(obj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 				curValue, got, err := unstructured.NestedSlice(obj.Object, "metadata", "fields")
 				if err != nil || !got {
+					logrus.Debugf("couldn't find metadata.fields at unstr.Object")
 					return obj, err
 				}
 
-				//for debugging purposes
-				logrus.Infof("Fields array has %d items: %+v", len(curValue), curValue)
-
-				// DYNAMIC SEARCH: Iterate over the row to find the "Age" column
-				var found bool
-				for i, field := range curValue {
-					if field == nil {
-						continue
-					}
-
-					// 1. Safety Cast
-					valStr, ok := field.(string)
-					if !ok {
-						continue
-					}
-
-					// 2. Optimization: Skip strings that are clearly not durations.
-					// "Age" strings (10d, 4h) start with a digit.
-					// Names/Status (Active, local) start with letters.
-					if len(valStr) == 0 || (valStr[0] < '0' || valStr[0] > '9') {
-						continue
-					}
-
-					// 3. Attempt Parse
-					duration, err := rescommon.ParseTimestampOrHumanReadableDuration(valStr)
-					if err != nil {
-						// If it fails to parse, it's just some other number/string. Keep looking.
-						continue
-					}
-
-					// 4. FOUND IT: Update the value at THIS index (i)
-					curValue[i] = fmt.Sprintf("%d", now().Add(-duration).UnixMilli())
-					found = true
-
-					// Stop after finding the first valid duration to avoid double-processing
-					break
-				}
-
-				// If we didn't find a date, we simply exit without error so the UI shows whatever string is there
-				if !found {
-					// Optional: logrus.Debug("No valid duration field found in row")
+				// Check if the index is within bounds
+				if idx < 0 || idx >= len(curValue) {
+					logrus.Debugf("Field index %d out of bounds (length: %d)", idx, len(curValue))
 					return obj, nil
 				}
 
-				// Write the updated slice back to the object
+				field := curValue[idx]
+				if field == nil {
+					logrus.Debugf("Field at index %d is nil", idx)
+					return obj, nil
+				}
+
+				// Safety cast
+				valStr, ok := field.(string)
+				if !ok {
+					logrus.Warnf("time field isn't a string")
+					return obj, nil
+				}
+
+				// Parse the duration
+				duration, err := rescommon.ParseTimestampOrHumanReadableDuration(valStr)
+				if err != nil {
+					logrus.Debugf("convert timestamp value: %s failed with error: %v", valStr, err)
+					return obj, nil
+				}
+
+				// Update the value at the correct index
+				curValue[idx] = fmt.Sprintf("%d", now().Add(-duration).UnixMilli())
+
+				// Write back
 				if err := unstructured.SetNestedSlice(obj.Object, curValue, "metadata", "fields"); err != nil {
 					return obj, err
 				}
@@ -138,4 +123,20 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 		}
 		return obj, nil
 	}
+}
+
+// extractFieldIndex extracts the index from a field path like "$.metadata.fields[2]"
+// Returns -1 if the index cannot be extracted
+func extractFieldIndex(fieldPath string) int {
+	// Extract number from "$.metadata.fields[2]"
+	re := regexp.MustCompile(`\[(\d+)\]`)
+	matches := re.FindStringSubmatch(fieldPath)
+	if len(matches) < 2 {
+		return -1
+	}
+	idx, err := strconv.Atoi(matches[1])
+	if err != nil {
+		return -1
+	}
+	return idx
 }
