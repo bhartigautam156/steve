@@ -4,12 +4,12 @@ package virtual
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	rescommon "github.com/rancher/steve/pkg/resources/common"
 	"github.com/rancher/steve/pkg/resources/virtual/clusters"
 	"github.com/rancher/steve/pkg/resources/virtual/common"
-	"github.com/rancher/steve/pkg/resources/virtual/dates"
 	"github.com/rancher/steve/pkg/resources/virtual/events"
 
 	"github.com/sirupsen/logrus"
@@ -45,13 +45,47 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 	}
 
 	// Detecting if we need to convert date fields
-	dateConverter := &dates.Converter{
-		GVK:       gvk,
-		Columns:   columns,
-		IsCRD:     isCRD,
-		JSONPaths: jsonPaths,
+	for _, col := range columns {
+		gvkDateFields, gvkFound := rescommon.DateFieldsByGVK[gvk]
+		hasCRDDate := isCRD && col.Type == "date"
+		hasCRDDate = false
+		hasBuiltInDate := gvkFound && slices.Contains(gvkDateFields, col.Name)
+		if hasCRDDate || hasBuiltInDate {
+			converters = append(converters, func(obj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+				index := rescommon.GetIndexValueFromString(col.Field)
+				if index == -1 {
+					return obj, fmt.Errorf("field index not found at column.Field struct variable: %s", col.Field)
+				}
+
+				curValue, got, err := unstructured.NestedSlice(obj.Object, "metadata", "fields")
+				if !got {
+					return obj, nil
+				}
+
+				if err != nil {
+					return obj, err
+				}
+
+				value, cast := curValue[index].(string)
+				if !cast {
+					return obj, fmt.Errorf("could not cast metadata.fields %d to string", index)
+				}
+
+				duration, err := rescommon.ParseTimestampOrHumanReadableDuration(value)
+				if err != nil {
+					logrus.Errorf("parse timestamp %s, failed with error: %s", value, err)
+					return obj, nil
+				}
+
+				curValue[index] = fmt.Sprintf("%d", now().Add(-duration).UnixMilli())
+				if err := unstructured.SetNestedSlice(obj.Object, curValue, "metadata", "fields"); err != nil {
+					return obj, err
+				}
+
+				return obj, nil
+			})
+		}
 	}
-	converters = append(converters, dateConverter.Transform)
 
 	converters = append(converters, t.defaultFields.TransformCommon)
 
