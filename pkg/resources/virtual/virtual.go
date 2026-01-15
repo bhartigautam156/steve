@@ -48,30 +48,59 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 		gvkDateFields, gvkFound := rescommon.DateFieldsByGVK[gvk]
 		hasCRDDate := isCRD && col.Type == "date"
 		hasBuiltInDate := gvkFound && slices.Contains(gvkDateFields, col.Name)
+
 		if hasCRDDate || hasBuiltInDate {
 			converters = append(converters, func(obj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
-				index := rescommon.GetIndexValueFromString(col.Field)
-				if index == -1 {
-					return obj, fmt.Errorf("field index not found at column.Field struct variable: %s", col.Field)
-				}
+				// FIX: Removed dependency on static 'index' from col.Field
+				// because K8s 1.35+ may shift columns, making the schema index invalid.
 
 				curValue, got, err := unstructured.NestedSlice(obj.Object, "metadata", "fields")
-				if err != nil || !got || curValue[index] == nil {
+				if err != nil || !got {
 					return obj, err
 				}
 
-				value, cast := curValue[index].(string)
-				if !cast {
-					return obj, fmt.Errorf("could not cast metadata.fields[%d] to string, original value: <%v>", index, curValue[index])
+				// DYNAMIC SEARCH: Iterate over the row to find the "Age" column
+				var found bool
+				for i, field := range curValue {
+					if field == nil {
+						continue
+					}
+
+					// 1. Safety Cast
+					valStr, ok := field.(string)
+					if !ok {
+						continue
+					}
+
+					// 2. Optimization: Skip strings that are clearly not durations.
+					// "Age" strings (10d, 4h) start with a digit.
+					// Names/Status (Active, local) start with letters.
+					if len(valStr) == 0 || (valStr[0] < '0' || valStr[0] > '9') {
+						continue
+					}
+
+					// 3. Attempt Parse
+					duration, err := rescommon.ParseTimestampOrHumanReadableDuration(valStr)
+					if err != nil {
+						// If it fails to parse, it's just some other number/string. Keep looking.
+						continue
+					}
+
+					// 4. FOUND IT: Update the value at THIS index (i)
+					curValue[i] = fmt.Sprintf("%d", now().Add(-duration).UnixMilli())
+					found = true
+
+					// Stop after finding the first valid duration to avoid double-processing
+					break
 				}
 
-				duration, err := rescommon.ParseTimestampOrHumanReadableDuration(value)
-				if err != nil {
-					logrus.Errorf("parse timestamp %s, failed with error: %s", value, err)
+				// If we didn't find a date, we simply exit without error so the UI shows whatever string is there
+				if !found {
+					// Optional: logrus.Debug("No valid duration field found in row")
 					return obj, nil
 				}
 
-				curValue[index] = fmt.Sprintf("%d", now().Add(-duration).UnixMilli())
+				// Write the updated slice back to the object
 				if err := unstructured.SetNestedSlice(obj.Object, curValue, "metadata", "fields"); err != nil {
 					return obj, err
 				}
@@ -86,19 +115,14 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 	return func(raw interface{}) (interface{}, error) {
 		obj, isSignal, err := common.GetUnstructured(raw)
 		if isSignal {
-			// isSignal= true overrides any error
 			return raw, err
 		}
 		if err != nil {
 			return nil, fmt.Errorf("GetUnstructured: failed to get underlying object: %w", err)
 		}
-		// Conversions are run in this loop:
 		for _, f := range converters {
 			transformed, err := f(obj)
 			if err != nil {
-				// If we return an error here, the upstream k8s library will retry a transform, and we don't want that,
-				// as it's likely to loop forever and the server will hang.
-				// Instead, log this error and try the remaining transform functions
 				logrus.Errorf("error in transform for gvk Kind:%s Group:%s Version:%s, error: %v", gvk.Kind, gvk.Group, gvk.Version, err)
 			}
 			obj = transformed
