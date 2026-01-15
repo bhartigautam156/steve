@@ -43,6 +43,11 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 		converters = append(converters, clusters.TransformManagedCluster)
 	}
 
+	//aded for debugging purposes
+	for idx, col := range columns {
+		logrus.Infof("Column %d: Name=%s, Field=%s, Type=%s", idx, col.Name, col.Field, col.Type)
+	}
+
 	// Detecting if we need to convert date fields
 	for _, col := range columns {
 		gvkDateFields, gvkFound := rescommon.DateFieldsByGVK[gvk]
@@ -51,6 +56,7 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 
 		if hasCRDDate || hasBuiltInDate {
 			converters = append(converters, func(obj *unstructured.Unstructured) (*unstructured.Unstructured, error) {
+				logrus.Infof("Processing object: %+v", obj.Object)
 				// FIX: Removed dependency on static 'index' from col.Field
 				// because K8s 1.35+ may shift columns, making the schema index invalid.
 
@@ -58,6 +64,9 @@ func (t *TransformBuilder) GetTransformFunc(gvk schema.GroupVersionKind, columns
 				if err != nil || !got {
 					return obj, err
 				}
+
+				//for debugging purposes
+				logrus.Infof("Fields array has %d items: %+v", len(curValue), curValue)
 
 				// DYNAMIC SEARCH: Iterate over the row to find the "Age" column
 				var found bool
