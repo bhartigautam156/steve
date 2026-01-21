@@ -338,17 +338,10 @@ k8s.io/kube-aggregator v0.35.0 h1:FBtbuRFA7Ohe2QKirFZcJf8rgimC8oSaNiCi4pdU5xw=
 k8s.io/kube-aggregator v0.35.0/go.mod h1:vKBRpQUfDryb7udwUwF3eCSvv3AJNgHtL4PGl6PqAg8=
 k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 h1:Y3gxNAuB0OBLImH611+UDZcmKS3g6CthxToOb37KgwE=
 k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912/go.mod h1:kdmbQkyfwUagLfXIad1y2TdrjPFWp2Q89B3qkRwf/pQ=
-<<<<<<< HEAD
 k8s.io/kubernetes v1.35.0 h1:PUOojD8c8E3csMP5NX+nLLne6SGqZjrYCscptyBfWMY=
 k8s.io/kubernetes v1.35.0/go.mod h1:Tzk9Y9W/XUFFFgTUVg+BAowoFe+Pc7koGLuaiLHdcFg=
 k8s.io/utils v0.0.0-20251002143259-bc988d571ff4 h1:SjGebBtkBqHFOli+05xYbK8YF1Dzkbzn+gDM4X9T4Ck=
 k8s.io/utils v0.0.0-20251002143259-bc988d571ff4/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
-=======
-k8s.io/kubernetes v1.33.1 h1:86+VVY/f11taZdpEZrNciLw1MIQhu6BFXf/OMFn5EUg=
-k8s.io/kubernetes v1.33.1/go.mod h1:2nWuPk0seE4+6sd0x60wQ6rYEXcV7SoeMbU0YbFm/5k=
-k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 h1:hwvWFiBzdWw1FhfY1FooPn3kzWuJ8tmbZBHi4zVsl1Y=
-k8s.io/utils v0.0.0-20250604170112-4c0f3b243397/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
->>>>>>> 0b096ef (Bump modernc.org/sqlite (#934))
 modernc.org/cc/v4 v4.26.5 h1:xM3bX7Mve6G8K8b+T11ReenJOT+BmVqQj0FY5T4+5Y4=
 modernc.org/cc/v4 v4.26.5/go.mod h1:uVtb5OGqUKpoLWhqwNQo/8LwvoiEBLvZXIQ/SmO6mL0=
 modernc.org/ccgo/v4 v4.28.1 h1:wPKYn5EC/mYTqBO373jKjvX2n+3+aK7+sICCv4Fjy1A=
