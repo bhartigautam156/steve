@@ -5,11 +5,11 @@ go 1.25.0
 toolchain go1.25.4
 
 replace (
-	github.com/rancher/dynamiclistener => github.com/bhartigautam156/dynamiclistener v0.0.0-20251230121719-181be4aee6f5
-	github.com/rancher/lasso => github.com/bhartigautam156/lasso v0.0.0-20251229100131-0f72619beec0
-	github.com/rancher/norman => github.com/bhartigautam156/norman v0.0.0-20251230120334-71f332fee56c
-	github.com/rancher/rancher/apiserver => github.com/bhartigautam156/apiserver v0.0.0-20251230120015-447e11029750
-	github.com/rancher/wrangler/v3 => github.com/bhartigautam156/wrangler/v3 v3.3.1-0.20251229122518-17d8c43b27b8
+	github.com/rancher/dynamiclistener => github.com/bhartigautam156/dynamiclistener v0.0.0-20260121074716-0c5e7e656ef6
+	github.com/rancher/lasso => github.com/bhartigautam156/lasso v0.0.0-20260121065228-70b2c91143c4
+	github.com/rancher/norman => github.com/bhartigautam156/norman v0.0.0-20260121072704-a035b9f8f05b
+	github.com/rancher/rancher/apiserver => github.com/bhartigautam156/apiserver v0.0.0-20260121080657-830ec77018bb
+	github.com/rancher/wrangler/v3 => github.com/bhartigautam156/wrangler/v3 v3.3.2-0.20260121071658-21d254f6dd17
 )
 
 replace (
