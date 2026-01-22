@@ -6,8 +6,6 @@ import (
 
 	"github.com/rancher/apiserver/pkg/types"
 	"github.com/rancher/steve/pkg/attributes"
-	"github.com/rancher/steve/pkg/schema/table"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // GetIndexValueFromString looks for values between [ ].
@@ -35,24 +33,9 @@ func GetColumnDefinitions(schema *types.APISchema) []ColumnDefinition {
 	if columns == nil {
 		return nil
 	}
-	if colDefs, ok := columns.([]ColumnDefinition); ok {
-		return colDefs
+	colDefs, ok := columns.([]ColumnDefinition)
+	if !ok {
+		return nil
 	}
-	if cols, ok := columns.([]table.Column); ok {
-		var colDefs []ColumnDefinition
-		for _, col := range cols {
-			colDefs = append(colDefs, ColumnDefinition{
-				TableColumnDefinition: metav1.TableColumnDefinition{
-					Name:        col.Name,
-					Type:        col.Type,
-					Format:      col.Format,
-					Description: col.Description,
-					Priority:    int32(col.Priority),
-				},
-				Field: col.Field,
-			})
-		}
-		return colDefs
-	}
-	return nil
+	return colDefs
 }
